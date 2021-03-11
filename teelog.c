@@ -85,7 +85,7 @@ static void teelog(struct context *ctx)
 
 static void fatal_exit(int argc, char **argv)
 {
-	fprintf(stderr, "Usage: %s [-t nsecs] [-n] name\n", argv[0]);
+	fprintf(stderr, "Usage: %s [-l lines] [-f files] prefix\n", argv[0]);
 	exit(EXIT_FAILURE);
 }
 
