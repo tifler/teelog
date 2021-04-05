@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
+#include <pthread.h>
+#include <sys/types.h>
 
 /*****************************************************************************/
 
@@ -59,21 +61,31 @@ static FILE *getFile(struct context *ctx)
 	return ctx->lastFile;
 }
 
-ssize_t safe_read(int fd, void *buf, size_t count)
+static void *ppid_monitor(void *param)
 {
-	ssize_t n;
-
 	do {
-		n = read(fd, buf, count);
-	} while (n < 0 && errno == EINTR);
+		sleep(1);
+	} while (getppid() != 1);
 
-	return n;
+	//fprintf(stderr, "Terminate teelog (ppid=1)\n");
+	exit(EXIT_SUCCESS);
+}
+
+static void start_ppid_monitor(void)
+{
+	pthread_t thid;
+	pthread_create(&thid, NULL, ppid_monitor, NULL);
+	pthread_detach(thid);
 }
 
 static void teelog(struct context *ctx)
 {
 	char linebuf[MAX_LINE_LENGTH];
-	while (fgets(linebuf, sizeof(linebuf) - 1, stdin)) {
+	start_ppid_monitor();
+	while (!feof(stdin)) {
+		char *p = fgets(linebuf, sizeof(linebuf) - 1, stdin);
+		if (!p)
+			continue;
 		FILE *out = getFile(ctx);
 		fputs(linebuf, stdout);
 		if (out) {
@@ -81,6 +93,7 @@ static void teelog(struct context *ctx)
 			ctx->lineCount++;
 		}
 	}
+	fprintf(stderr, "teelog terminated.\n");
 }
 
 static void fatal_exit(int argc, char **argv)
