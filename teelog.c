@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include <sys/types.h>
+#include <sys/prctl.h>
 
 /*****************************************************************************/
 
@@ -63,12 +64,14 @@ static FILE *getFile(struct context *ctx)
 
 static void *ppid_monitor(void *param)
 {
+	prctl(PR_SET_NAME, "ppid_monitor", 0UL, 0UL, 0UL);
 	do {
 		sleep(1);
 	} while (getppid() != 1);
 
 	//fprintf(stderr, "Terminate teelog (ppid=1)\n");
 	exit(EXIT_SUCCESS);
+	return NULL;
 }
 
 static void start_ppid_monitor(void)
